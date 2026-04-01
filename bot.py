@@ -1,6 +1,5 @@
 import telebot
 import chess
-from stockfish import Stockfish
 
 # 🔑 Telegram Bot Token
 import os
@@ -12,9 +11,6 @@ bot = telebot.TeleBot(TOKEN)
 board = chess.Board()
 
 # 🤖 Chess engine (use your correct path)
-stockfish = Stockfish(
-    path=r"C:\Users\H P\Downloads\stockfish-windows-x86-64-avx2\stockfish\stockfish-windows-x86-64-avx2.exe"
-)
 
 # ⚙️ Hardware toggle
 USE_HARDWARE = False   # change to True when Pico is connected
@@ -54,8 +50,7 @@ def move_handler(message):
             bot.reply_to(message, f"Your move: {from_pos.upper()} → {to_pos.upper()} ♟️")
 
             # 🧠 Engine move
-            stockfish.set_fen_position(board.fen())
-            engine_move = stockfish.get_best_move()
+
 
             if engine_move:
                 board.push(chess.Move.from_uci(engine_move))
