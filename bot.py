@@ -3,7 +3,8 @@ import chess
 from stockfish import Stockfish
 
 # 🔑 Telegram Bot Token
-TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
+import os
+TOKEN = os.getenv("TOKEN")
 
 bot = telebot.TeleBot(TOKEN)
 
