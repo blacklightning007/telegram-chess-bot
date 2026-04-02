@@ -7,7 +7,7 @@ import chess.svg
 import cairosvg
 
 # 🔑 Your Telegram Token
-TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
+TOKEN = "YOUR_BOT_TOKEN_HERE"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -23,13 +23,20 @@ def get_board(user_id):
 # 🖼️ Send board as image
 def send_board_image(chat_id, board):
     svg_data = chess.svg.board(board=board)
-
-    # Convert SVG → PNG
     cairosvg.svg2png(bytestring=svg_data, write_to="board.png")
 
-    # Send image
     with open("board.png", "rb") as photo:
         bot.send_photo(chat_id, photo)
+
+# 🧠 Game status checker
+def check_game_status(chat_id, board):
+    if board.is_checkmate():
+        winner = "White" if board.turn == chess.BLACK else "Black"
+        bot.send_message(chat_id, f"🏁 Checkmate! {winner} wins!")
+    elif board.is_stalemate():
+        bot.send_message(chat_id, "🤝 Stalemate! It's a draw.")
+    elif board.is_check():
+        bot.send_message(chat_id, "⚠️ Check!")
 
 # ------------------ COMMANDS ------------------
 
@@ -54,7 +61,7 @@ def move_handler(message):
 
         board = get_board(message.from_user.id)
 
-        # 🔴 Ensure it's user's turn
+        # Ensure user's turn
         if board.turn != chess.WHITE:
             bot.reply_to(message, "Wait for your turn ⏳")
             return
@@ -72,6 +79,8 @@ def move_handler(message):
                 f"Your move: {from_pos.upper()} → {to_pos.upper()} ♟️"
             )
 
+            check_game_status(message.chat.id, board)
+
             # 🤖 AI move
             if not board.is_game_over():
                 ai_move = random.choice(list(board.legal_moves))
@@ -82,7 +91,8 @@ def move_handler(message):
                     f"Bot plays: {str(ai_move).upper()} 🤖"
                 )
 
-            # 🖼️ Send board image
+                check_game_status(message.chat.id, board)
+
             send_board_image(message.chat.id, board)
 
         else:
