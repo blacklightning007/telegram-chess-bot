@@ -20,15 +20,22 @@ def get_board(user_id):
         user_boards[user_id] = chess.Board()
     return user_boards[user_id]
 
-# 🖼️ Send board as image
-def send_board_image(chat_id, board):
-    svg_data = chess.svg.board(board=board)
+# 🖼️ Send board with highlight
+def send_board_image(chat_id, board, last_move=None):
+    if last_move:
+        svg_data = chess.svg.board(
+            board=board,
+            squares=[last_move.from_square, last_move.to_square]
+        )
+    else:
+        svg_data = chess.svg.board(board=board)
+
     cairosvg.svg2png(bytestring=svg_data, write_to="board.png")
 
     with open("board.png", "rb") as photo:
         bot.send_photo(chat_id, photo)
 
-# 🧠 Game status checker
+# 🧠 Game status
 def check_game_status(chat_id, board):
     if board.is_checkmate():
         winner = "White" if board.turn == chess.BLACK else "Black"
@@ -93,7 +100,9 @@ def move_handler(message):
 
                 check_game_status(message.chat.id, board)
 
-            send_board_image(message.chat.id, board)
+                send_board_image(message.chat.id, board, ai_move)
+            else:
+                send_board_image(message.chat.id, board, move)
 
         else:
             bot.reply_to(message, "Invalid move ❌")
