@@ -1,28 +1,69 @@
 import telebot
 from flask import Flask
 import threading
+import chess
 
-# 🔑 Your Telegram Token
 TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
+# 🧠 Store board per user
+user_boards = {}
+
+def get_board(user_id):
+    if user_id not in user_boards:
+        user_boards[user_id] = chess.Board()
+    return user_boards[user_id]
+
 # ------------------ COMMANDS ------------------
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, "Bot is live 🚀")
+    bot.reply_to(message, "Chess bot ready ♟️\nUse /move E2 E4")
 
 @bot.message_handler(commands=['reset'])
 def reset(message):
-    bot.reply_to(message, "Reset done ✅")
+    user_boards[message.from_user.id] = chess.Board()
+    bot.reply_to(message, "Game reset ♟️")
+
+@bot.message_handler(commands=['move'])
+def move_handler(message):
+    try:
+        parts = message.text.split()
+
+        if len(parts) != 3:
+            bot.reply_to(message, "Usage: /move E2 E4")
+            return
+
+        from_pos = parts[1].lower()
+        to_pos = parts[2].lower()
+
+        board = get_board(message.from_user.id)
+
+        move = chess.Move.from_uci(from_pos + to_pos)
+
+        if move in board.legal_moves:
+            board.push(move)
+
+            bot.reply_to(
+                message,
+                f"Move played: {from_pos.upper()} → {to_pos.upper()} ♟️"
+            )
+
+            bot.send_message(message.chat.id, str(board))
+        else:
+            bot.reply_to(message, "Invalid move ❌")
+
+    except Exception as e:
+        bot.reply_to(message, "Error processing move")
+        print(e)
 
 @bot.message_handler(func=lambda msg: True)
-def echo(message):
-    bot.reply_to(message, f"You said: {message.text}")
+def fallback(message):
+    bot.reply_to(message, "Use /move E2 E4")
 
-# ------------------ FLASK ROUTE ------------------
+# ------------------ FLASK ------------------
 
 @app.route('/')
 def home():
@@ -36,7 +77,7 @@ def run_bot():
 
 threading.Thread(target=run_bot).start()
 
-# ------------------ START SERVER ------------------
+# ------------------ SERVER ------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
