@@ -2,7 +2,7 @@ import telebot
 from flask import Flask
 import threading
 import chess
-
+import random
 # 🔑 Your Telegram Token
 TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
 
@@ -54,7 +54,7 @@ def move_handler(message):
 
             # 🤖 AI move (simple)
             if not board.is_game_over():
-                ai_move = list(board.legal_moves)[0]  # simple AI
+                ai_move = randome.choice(list(board.legal_moves))  # simple AI
                 board.push(ai_move)
 
                 bot.send_message(
