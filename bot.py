@@ -3,9 +3,11 @@ from flask import Flask
 import threading
 import chess
 import random
+import chess.svg
+import cairosvg
 
 # 🔑 Your Telegram Token
-TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
+TOKEN = "YOUR_BOT_TOKEN_HERE"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -18,6 +20,17 @@ def get_board(user_id):
         user_boards[user_id] = chess.Board()
     return user_boards[user_id]
 
+# 🖼️ Send board as image
+def send_board_image(chat_id, board):
+    svg_data = chess.svg.board(board=board)
+
+    # Convert SVG → PNG
+    cairosvg.svg2png(bytestring=svg_data, write_to="board.png")
+
+    # Send image
+    with open("board.png", "rb") as photo:
+        bot.send_photo(chat_id, photo)
+
 # ------------------ COMMANDS ------------------
 
 @bot.message_handler(commands=['start'])
@@ -28,6 +41,7 @@ def start(message):
 def reset(message):
     user_boards[message.from_user.id] = chess.Board()
     bot.reply_to(message, "Game reset ♟️")
+    send_board_image(message.chat.id, user_boards[message.from_user.id])
 
 @bot.message_handler(commands=['move'])
 def move_handler(message):
@@ -40,7 +54,7 @@ def move_handler(message):
 
         board = get_board(message.from_user.id)
 
-        # 🔴 Ensure it's user's turn (white)
+        # 🔴 Ensure it's user's turn
         if board.turn != chess.WHITE:
             bot.reply_to(message, "Wait for your turn ⏳")
             return
@@ -68,7 +82,8 @@ def move_handler(message):
                     f"Bot plays: {str(ai_move).upper()} 🤖"
                 )
 
-            bot.send_message(message.chat.id, str(board))
+            # 🖼️ Send board image
+            send_board_image(message.chat.id, board)
 
         else:
             bot.reply_to(message, "Invalid move ❌")
