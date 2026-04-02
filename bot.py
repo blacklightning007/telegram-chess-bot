@@ -3,8 +3,9 @@ from flask import Flask
 import threading
 import chess
 import random
+
 # 🔑 Your Telegram Token
-TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
+TOKEN = "YOUR_BOT_TOKEN_HERE"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -39,7 +40,7 @@ def move_handler(message):
 
         board = get_board(message.from_user.id)
 
-        # 🔴 Check turn (user always white)
+        # 🔴 Ensure it's user's turn (white)
         if board.turn != chess.WHITE:
             bot.reply_to(message, "Wait for your turn ⏳")
             return
@@ -59,27 +60,7 @@ def move_handler(message):
 
             # 🤖 AI move
             if not board.is_game_over():
-                import random
                 ai_move = random.choice(list(board.legal_moves))
-                board.push(ai_move)
-
-                bot.send_message(
-                    message.chat.id,
-                    f"Bot plays: {str(ai_move).upper()} 🤖"
-                )
-
-            bot.send_message(message.chat.id, str(board))
-
-        else:
-            bot.reply_to(message, "Invalid move ❌")
-
-    except Exception as e:
-        bot.reply_to(message, "Error processing move")
-        print(e)
-
-            # 🤖 AI move (simple)
-            if not board.is_game_over():
-                ai_move = randome.choice(list(board.legal_moves))  # simple AI
                 board.push(ai_move)
 
                 bot.send_message(
