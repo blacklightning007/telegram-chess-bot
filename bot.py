@@ -7,7 +7,7 @@ import chess.svg
 import cairosvg
 
 # 🔑 Your Telegram Token
-TOKEN = "YOUR_BOT_TOKEN_HERE"
+TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
