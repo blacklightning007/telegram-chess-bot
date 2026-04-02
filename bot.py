@@ -1,12 +1,16 @@
-import telebot
+from flask import Flask
+import threading
 
-TOKEN = "8750289393:AAGRLZCFmEhrpnnpHXrdptm8EXarGyptH_E"
+app = Flask(__name__)
 
-bot = telebot.TeleBot(TOKEN)
+@app.route('/')
+def home():
+    return "Bot is running"
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, "Bot is live 🚀")
+def run_bot():
+    bot.polling()
 
-print("Bot is running...")
-bot.polling()
+threading.Thread(target=run_bot).start()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
