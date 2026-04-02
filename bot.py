@@ -37,10 +37,15 @@ def move_handler(message):
             bot.reply_to(message, "Usage: /move E2 E4")
             return
 
+        board = get_board(message.from_user.id)
+
+        # 🔴 Check turn (user always white)
+        if board.turn != chess.WHITE:
+            bot.reply_to(message, "Wait for your turn ⏳")
+            return
+
         from_pos = parts[1].lower()
         to_pos = parts[2].lower()
-
-        board = get_board(message.from_user.id)
 
         move = chess.Move.from_uci(from_pos + to_pos)
 
@@ -51,6 +56,26 @@ def move_handler(message):
                 message,
                 f"Your move: {from_pos.upper()} → {to_pos.upper()} ♟️"
             )
+
+            # 🤖 AI move
+            if not board.is_game_over():
+                import random
+                ai_move = random.choice(list(board.legal_moves))
+                board.push(ai_move)
+
+                bot.send_message(
+                    message.chat.id,
+                    f"Bot plays: {str(ai_move).upper()} 🤖"
+                )
+
+            bot.send_message(message.chat.id, str(board))
+
+        else:
+            bot.reply_to(message, "Invalid move ❌")
+
+    except Exception as e:
+        bot.reply_to(message, "Error processing move")
+        print(e)
 
             # 🤖 AI move (simple)
             if not board.is_game_over():
