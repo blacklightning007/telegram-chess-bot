@@ -22,18 +22,26 @@ def get_board(user_id):
 
 # 🖼️ Send board with highlight
 def send_board_image(chat_id, board, last_move=None):
-    if last_move:
-        svg_data = chess.svg.board(
-            board=board,
-            squares=[last_move.from_square, last_move.to_square]
-        )
-    else:
-        svg_data = chess.svg.board(board=board)
+    try:
+        if last_move:
+            svg_data = chess.svg.board(
+                board=board,
+                fill={
+                    last_move.from_square: "#aaffaa",
+                    last_move.to_square: "#ffaaaa"
+                }
+            )
+        else:
+            svg_data = chess.svg.board(board=board)
 
-    cairosvg.svg2png(bytestring=svg_data, write_to="board.png")
+        cairosvg.svg2png(bytestring=svg_data, write_to="board.png")
 
-    with open("board.png", "rb") as photo:
-        bot.send_photo(chat_id, photo)
+        with open("board.png", "rb") as photo:
+            bot.send_photo(chat_id, photo)
+
+    except Exception as e:
+        print("Image error:", e)
+        bot.send_message(chat_id, str(board))  # fallback
 
 # 🧠 Game status
 def check_game_status(chat_id, board):
@@ -53,13 +61,21 @@ def start(message):
 
 @bot.message_handler(commands=['reset'])
 def reset(message):
-    user_boards[message.from_user.id] = chess.Board()
+    board = chess.Board()
+
+    # 🔴 Force white turn (safety)
+    board.turn = chess.WHITE
+
+    user_boards[message.from_user.id] = board
+
     bot.reply_to(message, "Game reset ♟️")
-    send_board_image(message.chat.id, user_boards[message.from_user.id])
+    send_board_image(message.chat.id, board)
 
 @bot.message_handler(commands=['move'])
 def move_handler(message):
     try:
+        print("Received move:", message.text)
+
         parts = message.text.split()
 
         if len(parts) != 3:
@@ -68,7 +84,7 @@ def move_handler(message):
 
         board = get_board(message.from_user.id)
 
-        # Ensure user's turn
+        # 🔴 Turn check
         if board.turn != chess.WHITE:
             bot.reply_to(message, "Wait for your turn ⏳")
             return
@@ -78,38 +94,39 @@ def move_handler(message):
 
         move = chess.Move.from_uci(from_pos + to_pos)
 
-        if move in board.legal_moves:
-            board.push(move)
+        if move not in board.legal_moves:
+            bot.reply_to(message, "Invalid move ❌")
+            return
 
-            bot.reply_to(
-                message,
-                f"Your move: {from_pos.upper()} → {to_pos.upper()} ♟️"
+        # ✅ Player move
+        board.push(move)
+
+        bot.reply_to(
+            message,
+            f"Your move: {from_pos.upper()} → {to_pos.upper()} ♟️"
+        )
+
+        check_game_status(message.chat.id, board)
+
+        # 🤖 AI move
+        if not board.is_game_over():
+            ai_move = random.choice(list(board.legal_moves))
+            board.push(ai_move)
+
+            bot.send_message(
+                message.chat.id,
+                f"Bot plays: {str(ai_move).upper()} 🤖"
             )
 
             check_game_status(message.chat.id, board)
 
-            # 🤖 AI move
-            if not board.is_game_over():
-                ai_move = random.choice(list(board.legal_moves))
-                board.push(ai_move)
-
-                bot.send_message(
-                    message.chat.id,
-                    f"Bot plays: {str(ai_move).upper()} 🤖"
-                )
-
-                check_game_status(message.chat.id, board)
-
-                send_board_image(message.chat.id, board, ai_move)
-            else:
-                send_board_image(message.chat.id, board, move)
-
+            send_board_image(message.chat.id, board, ai_move)
         else:
-            bot.reply_to(message, "Invalid move ❌")
+            send_board_image(message.chat.id, board, move)
 
     except Exception as e:
-        bot.reply_to(message, "Error processing move")
-        print(e)
+        print("Move error:", e)
+        bot.reply_to(message, "Error processing move ❌")
 
 @bot.message_handler(func=lambda msg: True)
 def fallback(message):
@@ -125,7 +142,7 @@ def home():
 
 def run_bot():
     print("Bot polling started...")
-    bot.polling()
+    bot.infinity_polling()
 
 threading.Thread(target=run_bot).start()
 
