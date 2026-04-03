@@ -3,7 +3,7 @@ from flask import Flask
 import threading
 
 # 🔑 Replace with your bot token
-TOKEN = "8677219552:AAHiJMXb3fg0RWDozvyyuN9od0XTpE7_Jno"
+TOKEN = "YOUR_BOT_TOKEN_HERE"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -55,7 +55,6 @@ def flashcards(message):
         words = s.split()
 
         if len(words) > 3:
-            # simple logic: hide first word
             answer = words[0]
             question = " ".join(["____"] + words[1:])
 
@@ -94,7 +93,7 @@ def quiz(message):
     q, _ = quiz_data[0]
     bot.send_message(message.chat.id, f"Q: {q}?")
 
-# ------------------ NEXT QUESTION ------------------
+# ------------------ NEXT ------------------
 
 @bot.message_handler(commands=['next'])
 def next_q(message):
@@ -106,7 +105,8 @@ def next_q(message):
 
     if len(quiz_list) > 1:
         quiz_list.pop(0)
-        bot.send_message(message.chat.id, f"Q: {quiz_list[0]}?")
+        q, _ = quiz_list[0]
+        bot.send_message(message.chat.id, f"Q: {q}?")
     else:
         bot.send_message(message.chat.id, "Quiz finished ✅")
 
@@ -126,6 +126,7 @@ def home():
 
 def run_bot():
     print("Bot polling started...")
+    bot.remove_webhook()   # 🔥 prevents webhook conflict
     bot.infinity_polling()
 
 threading.Thread(target=run_bot).start()
