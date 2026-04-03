@@ -1,4 +1,2 @@
 telebot
 flask
-python-chess
-cairosvg
