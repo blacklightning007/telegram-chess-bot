@@ -52,7 +52,17 @@ def flashcards(message):
     sentences = [s.strip() for s in notes.split(".") if len(s.strip()) > 5]
 
     for s in sentences:
-        bot.send_message(message.chat.id, f"Q: {s}?\nA: {s}")
+        words = s.split()
+
+        if len(words) > 3:
+            # simple logic: hide first word
+            answer = words[0]
+            question = " ".join(["____"] + words[1:])
+
+            bot.send_message(
+                message.chat.id,
+                f"Q: {question}?\nA: {answer}"
+            )
 
 # ------------------ QUIZ ------------------
 
@@ -66,13 +76,23 @@ def quiz(message):
 
     sentences = [s.strip() for s in notes.split(".") if len(s.strip()) > 5]
 
-    if not sentences:
-        bot.reply_to(message, "No valid content found")
+    quiz_data = []
+
+    for s in sentences:
+        words = s.split()
+        if len(words) > 3:
+            answer = words[0]
+            question = " ".join(["____"] + words[1:])
+            quiz_data.append((question, answer))
+
+    if not quiz_data:
+        bot.reply_to(message, "No valid content")
         return
 
-    user_quiz[message.from_user.id] = sentences
+    user_quiz[message.from_user.id] = quiz_data
 
-    bot.send_message(message.chat.id, f"Q: {sentences[0]}?")
+    q, _ = quiz_data[0]
+    bot.send_message(message.chat.id, f"Q: {q}?")
 
 # ------------------ NEXT QUESTION ------------------
 
